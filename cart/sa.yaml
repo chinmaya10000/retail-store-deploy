@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: carts
+  namespace: default
+  labels:
+    app.kubernetes.io/name: cart
+    app.kubernetes.io/instance: cart

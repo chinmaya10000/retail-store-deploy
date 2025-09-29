@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: orders-rabbitmq
+  namespace: default
+  labels:
+    app: orders
+spec:
+  selector:
+    matchLabels:
+      app: orders
+  serviceName: "orders-rabbitmq"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: orders
+    spec:
+      containers:
+      - name: rabbitmq
+        image: public.ecr.aws/docker/library/rabbitmq:3.8-management
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5672
+          name: amqp
+        - containerPort: 15672
+          name: http
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/rabbitmq/mnesia
+      volumes:
+      - name: data
+        emptyDir: {} # Use a persistent volume in production
+--- 
+apiVersion: v1
+kind: Service
+metadata:
+  name: orders-rabbitmq
+  namespace: default
+  labels:
+    app: orders
+spec:
+  type: ClusterIP
+  selector:
+    app: orders-rabbitmq
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: amqp
+      protocol: TCP
+    - name: http
+      port: 15672
+      targetPort: http
+      protocol: TCP
