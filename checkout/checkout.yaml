@@ -11,15 +11,16 @@ spec:
       app: checkout
   template:
     metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
       labels:
         app: checkout
     spec:
       serviceAccountName: checkout-sa
       securityContext:
         fsGroup: 1000
-        runAsGroup: 1000
-        runAsNonRoot: true
-        runAsUser: 1000
       containers:
       - name: checkout
         securityContext:
@@ -29,6 +30,8 @@ spec:
               - ALL
           privileged: false
           readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
         image: public.ecr.aws/aws-containers/retail-store-sample-checkout:1.3.0
         imagePullPolicy: Always
         ports:

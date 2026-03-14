@@ -2,49 +2,57 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: orders-postgresql
-  namespace: default
   labels:
     app: orders
 spec:
+  replicas: 1
+  serviceName: orders-postgresql
   selector:
     matchLabels:
       app: orders
-  serviceName: "orders-postgresql"
-  replicas: 1
   template:
     metadata:
       labels:
         app: orders
     spec:
+      imagePullSecrets:
+        - name: regcred
       containers:
-      - name: postgresql
-        image: public.ecr.aws/docker/library/postgres:13
-        imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 5432
-          name: postgresql
-          protocol: TCP
-        env:
-        - name: POSTGRES_DB
-          value: orders
-        - name: POSTGRES_USER
-          valueFrom:
-            secretKeyRef:
-              key: RETAIL_ORDERS_PERSISTENCE_USERNAME
-              name: orders-db-secret
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: RETAIL_ORDERS_PERSISTENCE_PASSWORD
-              name: orders-db-secret
-        - name: PGDATA
-          value: /data/pgdata
-        volumeMounts:
-        - name: data
-          mountPath: /var/lib/postgresql/data
-      volumes:
-      - name: data
-        emptyDir: {} # replace with PVC if persistence enabled
+        - name: postgresql
+          image: public.ecr.aws/docker/library/postgres:13
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_DB
+              value: orders
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: orders-db-secret
+                  key: RETAIL_ORDERS_PERSISTENCE_USERNAME
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: orders-db-secret
+                  key: RETAIL_ORDERS_PERSISTENCE_PASSWORD
+            - name: PGDATA
+              value: /data/pgdata
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          ports:
+            - name: postgresql
+              containerPort: 5432
+              protocol: TCP
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: "10Gi"
+
 --- 
 apiVersion: v1
 kind: Service
@@ -61,3 +69,4 @@ spec:
     - port: 5432
       targetPort: postgresql
       name: postgresql
+      protocol: TCP
