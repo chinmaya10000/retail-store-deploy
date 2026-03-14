@@ -46,7 +46,7 @@ spec:
               value: "-XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/urandom"
           envFrom:
             - configMapRef:
-                name: carts-config
+                name: cart-config
           ports:
             - name: http
               containerPort: 8080
